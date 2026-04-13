@@ -7,6 +7,8 @@ Invoked by the Tauri shell as a sidecar command.
 import json
 import re
 import sys
+import urllib.request
+import urllib.parse
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
@@ -26,6 +28,16 @@ def extract_video_id(url: str) -> str | None:
         if match:
             return match.group(1)
     return None
+
+
+def fetch_video_title(video_id: str) -> str:
+    try:
+        url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            return data.get("title", video_id)
+    except Exception:
+        return video_id
 
 
 def list_transcripts(video_id: str) -> list[dict]:
@@ -63,6 +75,11 @@ def handle_command(command: str, args: dict) -> dict:
             if video_id is None:
                 return {"error": "That link does not look like a valid YouTube video URL."}
             return {"video_id": video_id}
+
+        elif command == "fetch_title":
+            video_id = args.get("video_id", "")
+            title = fetch_video_title(video_id)
+            return {"title": title}
 
         elif command == "list_transcripts":
             video_id = args.get("video_id", "")

@@ -16,6 +16,10 @@ export function extractVideoId(url: string) {
   return callBackend<{ video_id?: string; error?: string }>("extract_video_id", { url });
 }
 
+export function fetchTitle(videoId: string) {
+  return callBackend<{ title?: string; error?: string }>("fetch_title", { videoId });
+}
+
 export function listTranscripts(videoId: string) {
   return callBackend<{ transcripts?: TranscriptTrack[]; error?: string }>("list_transcripts", { videoId });
 }

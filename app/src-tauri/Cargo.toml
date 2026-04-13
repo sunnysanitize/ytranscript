@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.0"
+version = "0.1.1"
 description = "Desktop app for fetching and exporting YouTube transcripts"
 authors = ["Sunny Sanitize <sunnyzhang565656@gmail.com>"]
 license = ""

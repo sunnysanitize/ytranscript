@@ -6,10 +6,13 @@ import TranscriptView from "./components/TranscriptView";
 import ExportBar from "./components/ExportBar";
 import HistoryPanel from "./components/HistoryPanel";
 import Feedback from "./components/Feedback";
+import UpdateBanner from "./components/UpdateBanner";
+import { checkForUpdate } from "./updater";
 import {
   extractVideoId,
   listTranscripts,
   fetchTranscript,
+  fetchTitle,
   exportTranscript,
 } from "./api";
 import {
@@ -27,21 +30,40 @@ import "./App.css";
 
 export default function App() {
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [tracks, setTracks] = useState<TranscriptTrack[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [currentVideoId, setCurrentVideoId] = useState("");
   const [currentUrl, setCurrentUrl] = useState("");
+  const [currentTitle, setCurrentTitle] = useState("");
   const [showTimestamps, setShowTimestamps] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("ytranscripts_dark") === "true";
+  });
   const [feedback, setFeedback] = useState({
     message: "",
     type: "info" as "info" | "success" | "error",
   });
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [update, setUpdate] = useState<{ version: string; url: string } | null>(null);
 
   useEffect(() => {
     setHistory(getHistory());
+    checkForUpdate().then((info) => {
+      if (info?.hasUpdate) {
+        setUpdate({ version: info.latestVersion, url: info.downloadUrl });
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      darkMode ? "dark" : "light"
+    );
+    localStorage.setItem("ytranscripts_dark", String(darkMode));
+  }, [darkMode]);
 
   const showFeedback = (
     message: string,
@@ -53,83 +75,91 @@ export default function App() {
     }
   };
 
-  const handleFetch = useCallback(
-    async (url: string, language: string) => {
-      setLoading(true);
-      setFeedback({ message: "", type: "info" });
-      setSegments([]);
+  const handleFetch = useCallback(async (url: string, language: string) => {
+    setLoading(true);
+    setLoadingStep("Validating URL...");
+    setFeedback({ message: "", type: "info" });
+    setSegments([]);
 
-      try {
-        const idResult = await extractVideoId(url);
-        if (idResult.error || !idResult.video_id) {
-          showFeedback(
-            idResult.error || "Invalid YouTube URL",
-            "error"
-          );
-          setLoading(false);
-          return;
-        }
-
-        const videoId = idResult.video_id;
-        setCurrentVideoId(videoId);
-        setCurrentUrl(url);
-
-        const trackResult = await listTranscripts(videoId);
-        if (trackResult.error) {
-          showFeedback(trackResult.error, "error");
-          setLoading(false);
-          return;
-        }
-
-        const availableTracks = trackResult.transcripts || [];
-        setTracks(availableTracks);
-
-        let lang = language;
-        if (availableTracks.length > 0) {
-          const hasRequested = availableTracks.some(
-            (t) => t.language_code === language
-          );
-          if (!hasRequested) {
-            lang = availableTracks[0].language_code;
-          }
-        }
-        setSelectedLanguage(lang);
-
-        const transcriptResult = await fetchTranscript(videoId, lang);
-        if (transcriptResult.error) {
-          showFeedback(transcriptResult.error, "error");
-          setLoading(false);
-          return;
-        }
-
-        const segs = transcriptResult.segments || [];
-        setSegments(segs);
-
-        const entry: HistoryEntry = {
-          videoId,
-          url,
-          title: videoId,
-          language: lang,
-          fetchedAt: new Date().toISOString(),
-          segments: segs,
-        };
-        addToHistory(entry);
-        setHistory(getHistory());
-
-        showFeedback(`Loaded ${segs.length} segments`, "success");
-      } catch (err) {
-        showFeedback(
-          err instanceof Error
-            ? err.message
-            : "An unexpected error occurred",
-          "error"
-        );
-      } finally {
+    try {
+      const idResult = await extractVideoId(url);
+      if (idResult.error || !idResult.video_id) {
+        showFeedback(idResult.error || "Invalid YouTube URL", "error");
         setLoading(false);
+        return;
       }
-    },
-    []
-  );
+
+      const videoId = idResult.video_id;
+      setCurrentVideoId(videoId);
+      setCurrentUrl(url);
+
+      setLoadingStep("Fetching video info...");
+
+      // Fetch title and transcripts in parallel
+      const [titleResult, trackResult] = await Promise.all([
+        fetchTitle(videoId),
+        listTranscripts(videoId),
+      ]);
+
+      const title = titleResult.title || videoId;
+      setCurrentTitle(title);
+
+      if (trackResult.error) {
+        showFeedback(trackResult.error, "error");
+        setLoading(false);
+        return;
+      }
+
+      const availableTracks = trackResult.transcripts || [];
+      setTracks(availableTracks);
+
+      let lang = language;
+      if (availableTracks.length > 0) {
+        const hasRequested = availableTracks.some(
+          (t) => t.language_code === language
+        );
+        if (!hasRequested) {
+          lang = availableTracks[0].language_code;
+        }
+      }
+      setSelectedLanguage(lang);
+
+      setLoadingStep("Downloading transcript...");
+
+      const transcriptResult = await fetchTranscript(videoId, lang);
+      if (transcriptResult.error) {
+        showFeedback(transcriptResult.error, "error");
+        setLoading(false);
+        return;
+      }
+
+      const segs = transcriptResult.segments || [];
+      setSegments(segs);
+
+      const entry: HistoryEntry = {
+        videoId,
+        url,
+        title,
+        language: lang,
+        fetchedAt: new Date().toISOString(),
+        segments: segs,
+      };
+      addToHistory(entry);
+      setHistory(getHistory());
+
+      showFeedback(`Loaded ${segs.length} segments`, "success");
+    } catch (err) {
+      showFeedback(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+      setLoadingStep("");
+    }
+  }, []);
 
   const handleLanguageChange = useCallback(
     (lang: string) => {
@@ -189,8 +219,9 @@ export default function App() {
     setSegments(entry.segments);
     setCurrentVideoId(entry.videoId);
     setCurrentUrl(entry.url);
+    setCurrentTitle(entry.title);
     setSelectedLanguage(entry.language);
-    showFeedback(`Loaded from history: ${entry.title}`, "info");
+    showFeedback(`Loaded: ${entry.title}`, "info");
   }, []);
 
   const handleHistoryRemove = useCallback((videoId: string) => {
@@ -205,7 +236,14 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)} />
+      {update && (
+        <UpdateBanner
+          latestVersion={update.version}
+          downloadUrl={update.url}
+          onDismiss={() => setUpdate(null)}
+        />
+      )}
       <Feedback message={feedback.message} type={feedback.type} />
       <InputPanel
         onFetch={handleFetch}
@@ -218,6 +256,17 @@ export default function App() {
         <div className="content-area">
           {segments.length > 0 ? (
             <>
+              {currentTitle && (
+                <div className="video-title-bar">
+                  <svg className="yt-icon" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="28" height="20" rx="4" fill="#FF0000"/>
+                    <path d="M11.5 6.5V14L18.5 10L11.5 6.5Z" fill="white"/>
+                  </svg>
+                  <div className="video-title-text">
+                    <h2>{currentTitle}</h2>
+                  </div>
+                </div>
+              )}
               <ExportBar
                 onExport={handleExport}
                 onCopy={handleCopy}
@@ -239,7 +288,8 @@ export default function App() {
           {loading && (
             <div className="loading-state">
               <div className="spinner" />
-              <p>Fetching transcript...</p>
+              <p className="loading-step">{loadingStep}</p>
+              <p className="loading-hint">This may take a few seconds</p>
             </div>
           )}
         </div>

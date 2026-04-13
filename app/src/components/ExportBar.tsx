@@ -16,10 +16,7 @@ export default function ExportBar({ onExport, onCopy, disabled }: Props) {
       <button className="btn btn-secondary" onClick={() => onExport("json")} disabled={disabled}>
         Save as JSON
       </button>
-      <button className="btn btn-secondary" onClick={() => onExport("srt")} disabled={disabled}>
-        Save as SRT
-      </button>
-      <button className="btn btn-secondary" onClick={() => onExport("markdown")} disabled={disabled}>
+<button className="btn btn-secondary" onClick={() => onExport("markdown")} disabled={disabled}>
         Save as Markdown
       </button>
     </section>

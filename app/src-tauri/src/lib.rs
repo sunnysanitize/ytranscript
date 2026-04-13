@@ -108,6 +108,14 @@ fn fetch_transcript(video_id: String, language: String) -> Result<String, String
 }
 
 #[command]
+fn fetch_title(video_id: String) -> Result<String, String> {
+    run_backend(
+        "fetch_title",
+        &serde_json::json!({"video_id": video_id}).to_string(),
+    )
+}
+
+#[command]
 fn export_transcript(segments_json: String, format: String) -> Result<String, String> {
     let args = serde_json::json!({
         "segments": serde_json::from_str::<serde_json::Value>(&segments_json).unwrap_or_default(),
@@ -135,6 +143,7 @@ pub fn run() {
             extract_video_id,
             list_transcripts,
             fetch_transcript,
+            fetch_title,
             export_transcript,
         ])
         .run(tauri::generate_context!())
