@@ -219,6 +219,33 @@ Smart or AI features are intentionally out of scope for the early versions. The 
 
 This project is no longer framed as “just a Python CLI script.” The intended direction is a **real desktop application** with a strong UI and installable builds for regular users.
 
+## GitHub Releases
+
+This repository is set up to publish desktop installers through GitHub Releases.
+
+Release flow:
+
+1. Update the app version in:
+   - `app/package.json`
+   - `app/src-tauri/tauri.conf.json`
+   - `app/src-tauri/Cargo.toml`
+2. Commit the version bump to `main`
+3. Create and push a matching git tag, for example:
+   - `git tag v0.1.0`
+   - `git push origin v0.1.0`
+4. GitHub Actions will build release artifacts and attach them to the matching GitHub Release page
+
+Download links:
+
+- Public releases page: `https://github.com/sunnysanitize/ytranscript/releases`
+- Source ZIP of the repo: `https://github.com/sunnysanitize/ytranscript/archive/refs/heads/main.zip`
+
+Notes:
+
+- macOS and Windows builds are produced by GitHub Actions
+- Unsigned Windows builds may show SmartScreen warnings
+- Unsigned macOS builds are not notarized, so Gatekeeper may require extra confirmation on first launch
+
 The next implementation step is to actually scaffold the app around that direction:
 
 1. Create the React frontend
