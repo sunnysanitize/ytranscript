@@ -9,8 +9,8 @@ export default function Header({ darkMode, onToggleDark }: Props) {
       <div className="header-top">
         <div />
         <div className="header-center">
-          <h1>YTranscripts</h1>
-          <p className="tagline">Grab YouTube transcripts in a few clicks</p>
+          <h1><span className="title-y">Y</span><span className="title-rest">Transcripts</span></h1>
+          <p className="tagline">Every word from every video, instantly yours</p>
         </div>
         <button
           className="dark-toggle"

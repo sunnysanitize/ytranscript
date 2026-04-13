@@ -31,10 +31,22 @@
   letter-spacing: -0.5px;
 }
 
+.title-y {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 2.2rem;
+}
+
+.title-rest {
+  letter-spacing: -1px;
+}
+
 .tagline {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
+  letter-spacing: 0.3px;
+  font-style: italic;
 }
 
 .dark-toggle {
@@ -93,15 +105,21 @@
 
 /* Feedback */
 .feedback {
-  padding: 10px 16px;
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 10px 24px;
   border: 2px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 1rem;
   font-size: 14px;
   font-weight: 500;
   text-align: center;
-  animation: fadeIn 0.2s ease;
-  box-shadow: var(--shadow);
+  animation: toastIn 0.25s ease;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .feedback-info {
@@ -121,9 +139,9 @@
   border-color: var(--error);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* Input Panel */

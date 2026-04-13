@@ -221,7 +221,6 @@ export default function App() {
     setCurrentUrl(entry.url);
     setCurrentTitle(entry.title);
     setSelectedLanguage(entry.language);
-    showFeedback(`Loaded: ${entry.title}`, "info");
   }, []);
 
   const handleHistoryRemove = useCallback((videoId: string) => {
@@ -236,6 +235,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <Feedback message={feedback.message} type={feedback.type} />
       <Header darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)} />
       {update && (
         <UpdateBanner
@@ -244,7 +244,6 @@ export default function App() {
           onDismiss={() => setUpdate(null)}
         />
       )}
-      <Feedback message={feedback.message} type={feedback.type} />
       <InputPanel
         onFetch={handleFetch}
         loading={loading}
