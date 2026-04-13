@@ -1,6 +1,6 @@
 # YTranscripts
 
-A lightweight desktop app for fetching, searching, and exporting YouTube video transcripts. Built with Tauri, React, and Python.
+A lightweight desktop app for fetching, searching, and exporting YouTube video transcripts. Built with Tauri, React, and Rust.
 
 ## Features
 
@@ -28,7 +28,6 @@ See [Releases](https://github.com/sunnyzhangdev/ytranscripts/releases) for downl
 
 - [Node.js](https://nodejs.org/) (v18+)
 - [Rust](https://rustup.rs/)
-- Python 3.10+
 
 ### Setup
 
@@ -36,13 +35,6 @@ See [Releases](https://github.com/sunnyzhangdev/ytranscripts/releases) for downl
 # Clone the repo
 git clone https://github.com/sunnyzhangdev/ytranscripts.git
 cd ytranscripts
-
-# Install Python dependencies
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cd ..
 
 # Install frontend dependencies
 cd app
@@ -73,13 +65,10 @@ ytranscripts/
 │   │   ├── updater.ts        # GitHub release update checker
 │   │   └── types.ts
 │   ├── src-tauri/            # Tauri (Rust) desktop shell
-│   │   ├── src/lib.rs        # Commands that invoke the Python backend
+│   │   ├── src/lib.rs        # Native commands for transcripts, titles, and exports
 │   │   └── tauri.conf.json
 │   └── package.json
-├── backend/
-│   ├── transcript_service.py # Transcript fetching CLI
-│   ├── formats.py            # TXT, JSON, Markdown exporters
-│   └── requirements.txt
+├── backend/                  # Legacy Python prototype, not used in packaged builds
 └── README.md
 ```
 
@@ -89,8 +78,21 @@ ytranscripts/
 |-------|-----------|
 | Desktop shell | Tauri v2 (Rust) |
 | Frontend | React + TypeScript + Vite |
-| Backend | Python + youtube-transcript-api |
+| Transcript client | Rust + `yt-transcript-rs` |
 | Styling | Custom CSS (brutalist theme) |
+
+## macOS Release Signing
+
+To ship a macOS build that does not trigger Gatekeeper warnings, the release workflow expects these GitHub Actions secrets:
+
+- `APPLE_CERTIFICATE`: base64-encoded exported `.p12` for a `Developer ID Application` certificate
+- `APPLE_CERTIFICATE_PASSWORD`: password used for that `.p12`
+- `KEYCHAIN_PASSWORD`: temporary CI keychain password
+- `APPLE_ID`: Apple ID email used for notarization
+- `APPLE_PASSWORD`: Apple app-specific password
+- `APPLE_TEAM_ID`: Apple Developer team ID
+
+Without these secrets, macOS releases will build but will not be signed and notarized properly.
 
 ## Limitations
 
