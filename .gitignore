@@ -1,0 +1,22 @@
+.DS_Store
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+backend/venv/
+
+# Frontend
+app/node_modules/
+app/dist/
+app/dist-ssr/
+
+# Tauri / Rust build output
+app/src-tauri/target/
+
+# Logs and local env
+*.log
+.env
+.env.*
